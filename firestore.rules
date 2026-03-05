@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isCoach() {
+      return isAuthenticated() && getUserData().role == 'coach';
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && 
+                    request.resource.data.keys().hasAll(['uid', 'email', 'role']) &&
+                    request.resource.data.role in ['coach', 'athlete'];
+      allow update: if isOwner(userId) && 
+                    request.resource.data.role == resource.data.role; // Role cannot be changed easily
+    }
+
+    match /exercises/{exerciseId} {
+      allow read: if isAuthenticated();
+      allow write: if isCoach(); // Only coaches can add/edit master exercises
+    }
+
+    match /workouts/{workoutId} {
+      allow read: if isAuthenticated();
+      allow create: if isCoach() && request.resource.data.creatorId == request.auth.uid;
+      allow update, delete: if isCoach() && resource.data.creatorId == request.auth.uid;
+    }
+
+    match /plans/{planId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.athleteId || 
+        request.auth.uid == resource.data.coachId
+      );
+      allow create: if isCoach() && request.resource.data.coachId == request.auth.uid;
+      allow update, delete: if isCoach() && resource.data.coachId == request.auth.uid;
+    }
+  }
+}

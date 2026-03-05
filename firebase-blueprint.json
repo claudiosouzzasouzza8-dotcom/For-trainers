@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and role information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["coach", "athlete"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Exercise": {
+      "title": "Exercise",
+      "description": "Definition of a fitness exercise",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "steps": { "type": "array", "items": { "type": "string" } },
+        "muscleGroup": { "type": "string" },
+        "imagePrompt": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["name", "description", "steps"]
+    },
+    "Workout": {
+      "title": "Workout",
+      "description": "A collection of exercises forming a workout session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "creatorId": { "type": "string" },
+        "exercises": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "exerciseId": { "type": "string" },
+              "sets": { "type": "number" },
+              "reps": { "type": "number" },
+              "restSeconds": { "type": "number" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "creatorId", "exercises"]
+    },
+    "WorkoutPlan": {
+      "title": "WorkoutPlan",
+      "description": "A schedule of workouts assigned to a user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "athleteId": { "type": "string" },
+        "coachId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "schedule": {
+          "type": "object",
+          "description": "Map of YYYY-MM-DD to workoutId"
+        }
+      },
+      "required": ["athleteId", "coachId", "startDate", "endDate", "schedule"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/exercises/{exerciseId}": {
+      "schema": "Exercise",
+      "description": "Master list of exercises"
+    },
+    "/workouts/{workoutId}": {
+      "schema": "Workout",
+      "description": "Workout templates"
+    },
+    "/plans/{planId}": {
+      "schema": "WorkoutPlan",
+      "description": "Assigned workout plans"
+    }
+  }
+}
